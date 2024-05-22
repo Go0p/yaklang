@@ -102,6 +102,7 @@ jobs:
           docker run --rm -v $PWD:/workspace -w /workspace centos:7 /bin/bash -c "
           yum install -y gcc make && \
           CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -ldflags '-linkmode external -extldflags -static -s -w -X main.goVersion=$(go version) -X main.gitHash=$(git show -s --format=%H) -X main.buildTime=$(git show -s --format=%cd) -X main.yakVersion=${{ env.YAK_TAG }}' -o ./yak_centos7_amd64 common/yak/cmd/yak.go && ls
+          "
 
       - name: Upload Artifacts Windows
         uses: actions/upload-artifact@v2
