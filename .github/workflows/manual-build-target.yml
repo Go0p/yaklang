@@ -12,6 +12,7 @@ on:
           - macos-arm64
           - linux-amd64
           - linux-arm64
+          - centos7-amd64
 
 jobs:
   build:
