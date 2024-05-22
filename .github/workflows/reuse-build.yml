@@ -43,10 +43,6 @@ jobs:
           driver-opts: |
             --driver-opt env=DOCKER_CLI_EXPERIMENTAL=enabled
             --name=mybuilder
-            --driver docker-container
-            --driver-opt image=docker:20.10.7-git
-            --driver-opt env=BUILDKIT_STEP_LOG_MAX_SIZE=4096
-            --buildkitd-flags '--allow-insecure-entitlement security.insecure --allow-insecure-entitlement network.host'
 
         
       - name: Print Current Directory
