@@ -39,12 +39,7 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
-        with:
-          driver-opts: |
-            --driver-opt env=DOCKER_CLI_EXPERIMENTAL=enabled
-            --name=mybuilder
 
-        
       - name: Print Current Directory
         run: echo "Current directory is $(pwd)"
         
@@ -110,22 +105,24 @@ jobs:
         
       - name: Build and run Docker container
         run: |
-          docker buildx create --use mybuilder
-          docker buildx build --tag my-go-centos7 --platform linux/amd64 --build-arg GO_VERSION=1.20.3 --file - . <<EOF
-          FROM centos:7
-          ARG GO_VERSION
-          RUN yum -y update && \
-              yum -y install wget && \
-              wget https://golang.org/dl/go${GO_VERSION}.linux-amd64.tar.gz && \
-              tar -C /usr/local -xzf go${GO_VERSION}.linux-amd64.tar.gz && \
-              ln -s /usr/local/go/bin/go /usr/local/bin/go && \
-              yum clean all
+          docker buildx build --tag my-go-centos7 --platform linux/amd64 --file - . <<EOF
+          # 使用 CentOS 7 作为基础镜像
+          FROM centos:centos7
+          
+          RUN yum install -y gcc make git curl && \
+              curl -LO https://golang.org/dl/go1.20.3.linux-amd64.tar.gz && \
+              tar -C /usr/local -xzf go1.20.3.linux-amd64.tar.gz
+              
+          RUN yum install -y gcc glibc-static
+          
+          # 设置 Go 环境变量
           ENV PATH=$PATH:/usr/local/go/bin
-          WORKDIR /workspace
-          COPY . .
-          RUN go build -ldflags '-linkmode external -extldflags -static -s -w -X main.goVersion=$(go version) -X main.gitHash=12345678 -X main.buildTime=12345678 -X main.yakVersion=v1.3.3' -o ./yak_centos7_amd64 common/yak/cmd/yak.go
+          
+          # 编译应用程序并设置编译标志
+          RUN go build -ldflags "-linkmode external -extldflags '-static' -s -w -X 'main.goVersion=$(go version)' -X 'main.gitHash=$(git show -s --format=%H)' -X 'main.buildTime=$(git show -s --format=%cd)' -X 'main.yakVersion=$YAK_TAG'" -o "./yak_$(go env GOOS)_$(go env GOARCH)" -v common/yak/cmd/yak.go
+          
           EOF
-          docker run --name my-go-container -d my-go-centos7
+          docker run -v $PWD:/workspace -w /workspace -e YAK_TAG=${{ env.YAK_TAG }} --name my-go-container -d my-go-centos7
           
       - name: Copy built application
         run: |
