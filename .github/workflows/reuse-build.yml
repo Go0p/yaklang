@@ -33,7 +33,7 @@ on:
 
 jobs:
   build_and_upload_asset:
-    runs-on: ${{ contains(inputs.os, 'windows') && 'windows-latest' || 'macos-14' }}
+    runs-on: ${{ contains(inputs.os, 'windows') && 'windows-latest' || contains(inputs.os, 'centos') && 'ubuntu-latest' || 'macos-14' }}
     steps:
       - uses: actions/checkout@v2
 
