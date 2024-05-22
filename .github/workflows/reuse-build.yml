@@ -37,12 +37,13 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Set up Docker Buildx
+      - name: Set up Docker Buildx and Go
         if: inputs.os == 'centos7-amd64'
         uses: docker/setup-buildx-action@v1
-      
+            
       - name: Set up Go
         uses: actions/setup-go@v2
+        if: inputs.os != 'centos7-amd64'
         with:
           go-version: 1.20.3
 
@@ -100,6 +101,15 @@ jobs:
           go build -ldflags "-s -w -X 'main.goVersion=$(go version)' -X 'main.gitHash=$(git show -s --format=%H)' -X 'main.buildTime=$(git show -s --format=%cd)' -X 'main.yakVersion=${{ env.YAK_TAG }}'" -o ./yak_windows_amd64.exe -v common/yak/cmd/yak.go
         if: runner.os == 'Windows'
         
+      - name: Install Go 1.20.3 in Docker container
+        if: inputs.os == 'centos7-amd64'
+        run: |
+          docker run --rm centos:7 /bin/bash -c "
+          yum install -y gcc make && \
+          yum install -y https://dl.google.com/go/go1.20.3.linux-amd64.tar.gz && \
+          export PATH=$PATH:/usr/local/go/bin
+          "
+          
       - name: Build For CentOS 7
         if: inputs.os == 'centos7-amd64'
         run: |
@@ -107,7 +117,7 @@ jobs:
           yum install -y gcc make && \
           CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -ldflags '-linkmode external -extldflags -static -s -w -X main.goVersion=$(go version) -X main.gitHash=$(git show -s --format=%H) -X main.buildTime=$(git show -s --format=%cd) -X main.yakVersion=${{ env.YAK_TAG }}' -o ./yak_centos7_amd64 common/yak/cmd/yak.go && ls
           "
-
+          
       - name: Upload Artifacts Windows
         uses: actions/upload-artifact@v2
         if: runner.os == 'Windows'
