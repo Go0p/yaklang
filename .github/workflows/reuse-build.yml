@@ -97,7 +97,7 @@ jobs:
         if: runner.os == 'Windows'
         
       - name: Build For CentOS 7
-        if: inputs.os == 'centos7'
+        if: inputs.os == 'centos7-amd64'
         run: |
           docker run --rm -v $PWD:/workspace -w /workspace centos:7 /bin/bash -c "
           yum install -y gcc make && \
