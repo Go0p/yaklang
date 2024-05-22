@@ -40,6 +40,8 @@ jobs:
       - name: Set up Docker Buildx and Go
         if: inputs.os == 'centos7-amd64'
         uses: docker/setup-buildx-action@v1
+      - name: Print Current Directory
+        run: echo "Current directory is $(pwd)"
             
       - name: Set up Go
         uses: actions/setup-go@v2
@@ -104,6 +106,7 @@ jobs:
       - name: Build For CentOS 7
         if: inputs.os == 'centos7-amd64'
         run: |
+          export BUILD_DIR="$PWD"
           docker run --rm -v $PWD:/workspace -w /workspace \
           -e YAK_TAG=$YAK_TAG \
           centos:7 /bin/bash -c "
@@ -111,9 +114,14 @@ jobs:
           curl -LO https://golang.org/dl/go1.20.3.linux-amd64.tar.gz && \
           tar -C /usr/local -xzf go1.20.3.linux-amd64.tar.gz && \
           export PATH=$PATH:/usr/local/go/bin && \
-          CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -ldflags '-linkmode external -extldflags -static -s -w -X main.goVersion=$(go version) -X main.gitHash=12345678 -X main.buildTime=12345678 -X main.yakVersion=$YAK_TAG' -o ./yak_centos7_amd64 common/yak/cmd/yak.go && ls
-          "
-          
+          go build -ldflags '-linkmode external -extldflags -static -s -w -X main.goVersion=$(go version) -X main.gitHash=12345678 -X main.buildTime=12345678 -X main.yakVersion=$YAK_TAG' -o ./yak_centos7_amd64 common/yak/cmd/yak.go && \
+          echo '$BUILD_DIR/yak_centos7_amd64' > /workspace/artifact_path.txt"
+      - name: Read Artifact Path
+        if: always()
+        run: |
+          artifact_path=$(cat $BUILD_DIR/artifact_path.txt)
+          echo "::set-output name=artifact_path::$artifact_path"
+
       - name: Upload Artifacts Windows
         uses: actions/upload-artifact@v2
         if: runner.os == 'Windows'
@@ -154,7 +162,7 @@ jobs:
         if: inputs.os == 'centos7-amd64'
         with:
           name: yak_centos7_amd64
-          path: ./yak_centos7_amd64
+          path: ${{ steps.build.outputs.artifact_path }}
 
 
 
