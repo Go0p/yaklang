@@ -101,21 +101,17 @@ jobs:
           go build -ldflags "-s -w -X 'main.goVersion=$(go version)' -X 'main.gitHash=$(git show -s --format=%H)' -X 'main.buildTime=$(git show -s --format=%cd)' -X 'main.yakVersion=${{ env.YAK_TAG }}'" -o ./yak_windows_amd64.exe -v common/yak/cmd/yak.go
         if: runner.os == 'Windows'
         
-      - name: Install Go 1.20.3 in Docker container
-        if: inputs.os == 'centos7-amd64'
-        run: |
-          docker run --rm centos:7 /bin/bash -c "
-          yum install -y gcc make && \
-          yum install -y https://dl.google.com/go/go1.20.3.linux-amd64.tar.gz && \
-          export PATH=$PATH:/usr/local/go/bin
-          "
-          
       - name: Build For CentOS 7
         if: inputs.os == 'centos7-amd64'
         run: |
-          docker run --rm -v $PWD:/workspace -w /workspace centos:7 /bin/bash -c "
+          docker run --rm -v $PWD:/workspace -w /workspace \
+          -e YAK_TAG=$YAK_TAG \
+          centos:7 /bin/bash -c "
           yum install -y gcc make && \
-          CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -ldflags '-linkmode external -extldflags -static -s -w -X main.goVersion=$(go version) -X main.gitHash=$(git show -s --format=%H) -X main.buildTime=$(git show -s --format=%cd) -X main.yakVersion=${{ env.YAK_TAG }}' -o ./yak_centos7_amd64 common/yak/cmd/yak.go && ls
+          curl -LO https://golang.org/dl/go1.20.3.linux-amd64.tar.gz && \
+          tar -C /usr/local -xzf go1.20.3.linux-amd64.tar.gz && \
+          export PATH=$PATH:/usr/local/go/bin && \
+          CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -ldflags '-linkmode external -extldflags -static -s -w -X main.goVersion=$(go version) -X main.gitHash=12345678 -X main.buildTime=12345678 -X main.yakVersion=$YAK_TAG' -o ./yak_centos7_amd64 common/yak/cmd/yak.go && ls
           "
           
       - name: Upload Artifacts Windows
