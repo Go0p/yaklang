@@ -13,6 +13,7 @@ on:
           - macos-arm64
           - linux-amd64
           - linux-arm64
+          - centos7-amd64
       ee:
         type: boolean
         description: whether to build ee version
@@ -94,6 +95,13 @@ jobs:
         run: |
           go build -ldflags "-s -w -X 'main.goVersion=$(go version)' -X 'main.gitHash=$(git show -s --format=%H)' -X 'main.buildTime=$(git show -s --format=%cd)' -X 'main.yakVersion=${{ env.YAK_TAG }}'" -o ./yak_windows_amd64.exe -v common/yak/cmd/yak.go
         if: runner.os == 'Windows'
+        
+      - name: Build For CentOS 7
+        if: inputs.os == 'centos7'
+        run: |
+          docker run --rm -v $PWD:/workspace -w /workspace centos:7 /bin/bash -c "
+          yum install -y gcc make && \
+          CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -ldflags '-linkmode external -extldflags -static -s -w -X main.goVersion=$(go version) -X main.gitHash=$(git show -s --format=%H) -X main.buildTime=$(git show -s --format=%cd) -X main.yakVersion=${{ env.YAK_TAG }}' -o ./yak_centos7_amd64 common/yak/cmd/yak.go && ls
 
       - name: Upload Artifacts Windows
         uses: actions/upload-artifact@v2
@@ -129,6 +137,13 @@ jobs:
         with:
           name: yak_linux_arm64
           path: ./yak_linux_arm64
+          
+      - name: Upload Artifacts CentOS 7
+        uses: actions/upload-artifact@v2
+        if: inputs.os == 'centos7-amd64'
+        with:
+          name: yak_centos7_amd64
+          path: ./yak_centos7_amd64
 
 
 
