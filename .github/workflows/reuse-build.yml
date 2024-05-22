@@ -36,6 +36,10 @@ jobs:
     runs-on: ${{ contains(inputs.os, 'windows') && 'windows-latest' || 'macos-14' }}
     steps:
       - uses: actions/checkout@v2
+
+      - name: Set up Docker Buildx
+        if: inputs.os == 'centos7-amd64'
+        uses: docker/setup-buildx-action@v1
       
       - name: Set up Go
         uses: actions/setup-go@v2
